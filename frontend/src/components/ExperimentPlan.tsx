@@ -38,12 +38,14 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
   const [reviewSaved, setReviewSaved] = useState<Set<string>>(new Set())
   const [score, setScore] = useState<ScoreType | null>(null)
   const [scoreLoading, setScoreLoading] = useState(true)
+  const [scoreError, setScoreError] = useState<string | null>(null)
 
   useEffect(() => {
     setScoreLoading(true)
+    setScoreError(null)
     scorePlan(question, plan)
       .then(setScore)
-      .catch(() => {/* silently fail — score is non-critical */})
+      .catch((e: Error) => setScoreError(e.name === 'AbortError' ? 'Timed out' : e.message))
       .finally(() => setScoreLoading(false))
   }, [plan, question])
 
@@ -125,7 +127,7 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
           )}
 
           {/* Readiness Score */}
-          <ReadinessScore score={score} loading={scoreLoading} />
+          <ReadinessScore score={score} loading={scoreLoading} error={scoreError} />
 
           {/* Safety notes */}
           {plan.safety_notes && plan.safety_notes.length > 0 && (

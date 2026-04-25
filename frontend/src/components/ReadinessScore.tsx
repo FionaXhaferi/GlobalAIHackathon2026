@@ -5,6 +5,7 @@ import type { ReadinessScore as ScoreType } from '../types'
 interface Props {
   score: ScoreType | null
   loading: boolean
+  error?: string | null
 }
 
 // ── Circular gauge ──────────────────────────────────────────────────────────
@@ -120,7 +121,7 @@ function SubScoreBar({ label, icon, score, feedback }: {
 }
 
 // ── Main component ──────────────────────────────────────────────────────────
-export default function ReadinessScore({ score, loading }: Props) {
+export default function ReadinessScore({ score, loading, error }: Props) {
   if (loading && !score) {
     return (
       <div className="card border-l-4 border-l-slate-300 animate-pulse">
@@ -144,7 +145,7 @@ export default function ReadinessScore({ score, loading }: Props) {
     <div className="card border-l-4 border-l-slate-200">
       <div className="flex items-center gap-2 text-slate-400">
         <span className="text-lg">🎯</span>
-        <p className="text-sm">"Lab on Monday" Readiness Score — unavailable</p>
+        <p className="text-sm">"Lab on Monday" Readiness Score — {error ?? 'unavailable'}</p>
       </div>
     </div>
   )

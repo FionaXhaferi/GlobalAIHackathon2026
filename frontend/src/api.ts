@@ -71,16 +71,23 @@ export async function streamPlan(
 }
 
 export async function scorePlan(question: string, plan: ExperimentPlan): Promise<ReadinessScore> {
-  const res = await fetch(`${BASE}/score-plan`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, plan }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Scoring failed' }));
-    throw new Error(err.detail || 'Scoring failed');
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 60_000)
+  try {
+    const res = await fetch(`${BASE}/score-plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, plan }),
+      signal: controller.signal,
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Scoring failed' }))
+      throw new Error(err.detail || 'Scoring failed')
+    }
+    return res.json()
+  } finally {
+    clearTimeout(timeout)
   }
-  return res.json();
 }
 
 export async function submitFeedback(payload: FeedbackPayload): Promise<void> {
