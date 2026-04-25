@@ -222,19 +222,19 @@ FULL PLAN (for qualitative judgment — cost realism, citation quality, instruct
 
 ─── OUTPUT FORMAT ─────────────────────────────────────────────────────────────
 
-Return ONLY valid JSON (no preamble, no fences):
+Return ONLY valid JSON (no preamble, no markdown fences). Keep every feedback/verdict/issue string under 120 characters.
 {{
   "overall": <integer 0-100>,
   "sub_scores": {{
-    "protocol_completeness": {{ "score": <0-100>, "label": "Protocol Completeness", "icon": "🔬", "feedback": "cite specific steps or issues from pre-check" }},
-    "reagent_availability":  {{ "score": <0-100>, "label": "Reagent Availability",  "icon": "🧪", "feedback": "..." }},
-    "budget_realism":        {{ "score": <0-100>, "label": "Budget Realism",        "icon": "💰", "feedback": "..." }},
-    "statistical_power":     {{ "score": <0-100>, "label": "Statistical Power",     "icon": "📊", "feedback": "..." }},
-    "safety_coverage":       {{ "score": <0-100>, "label": "Safety Coverage",       "icon": "🛡️", "feedback": "..." }},
-    "citation_density":      {{ "score": <0-100>, "label": "Citation Density",      "icon": "📚", "feedback": "..." }}
+    "protocol_completeness": {{ "score": <0-100>, "label": "Protocol Completeness", "icon": "🔬", "feedback": "<120 chars max>" }},
+    "reagent_availability":  {{ "score": <0-100>, "label": "Reagent Availability",  "icon": "🧪", "feedback": "<120 chars max>" }},
+    "budget_realism":        {{ "score": <0-100>, "label": "Budget Realism",        "icon": "💰", "feedback": "<120 chars max>" }},
+    "statistical_power":     {{ "score": <0-100>, "label": "Statistical Power",     "icon": "📊", "feedback": "<120 chars max>" }},
+    "safety_coverage":       {{ "score": <0-100>, "label": "Safety Coverage",       "icon": "🛡️", "feedback": "<120 chars max>" }},
+    "citation_density":      {{ "score": <0-100>, "label": "Citation Density",      "icon": "📚", "feedback": "<120 chars max>" }}
   }},
-  "verdict": "one sentence: would a PI trust this plan enough to order materials?",
-  "top_issues": ["most critical gap 1 — be specific, quote the missing value", "most critical gap 2"]
+  "verdict": "<one sentence max 120 chars>",
+  "top_issues": ["<critical gap 1 max 100 chars>", "<critical gap 2 max 100 chars>"]
 }}"""
 
 
@@ -295,12 +295,16 @@ def score_plan(question: str, plan: dict) -> dict:
 
     message = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=1500,
+        max_tokens=2500,
         system=SCORER_SYSTEM,
         messages=[{"role": "user", "content": prompt}],
     )
 
     raw = message.content[0].text
+    import logging as _log
+    _log.getLogger(__name__).debug("scorer raw response: %s", raw[:500])
+    if message.stop_reason == "max_tokens":
+        _log.getLogger(__name__).warning("scorer hit max_tokens — response truncated, JSON will be invalid")
     result = _extract_json(raw)
 
     # Recompute overall from sub-scores — never trust Claude's self-reported overall
