@@ -140,7 +140,14 @@ export default function ReadinessScore({ score, loading }: Props) {
     )
   }
 
-  if (!score) return null
+  if (!score) return (
+    <div className="card border-l-4 border-l-slate-200">
+      <div className="flex items-center gap-2 text-slate-400">
+        <span className="text-lg">🎯</span>
+        <p className="text-sm">"Lab on Monday" Readiness Score — unavailable</p>
+      </div>
+    </div>
+  )
 
   const color = scoreColor(score.overall)
   const subScoreEntries = Object.values(score.sub_scores)

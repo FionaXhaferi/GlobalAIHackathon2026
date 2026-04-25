@@ -1,8 +1,11 @@
 import asyncio
 import json
+import logging
 import os
 import socket
 from contextlib import asynccontextmanager
+
+logger = logging.getLogger(__name__)
 from typing import Any, Optional
 
 from dotenv import load_dotenv
@@ -163,9 +166,10 @@ async def score_plan_endpoint(request: ScorePlanRequest):
         return result
     except Exception as exc:
         msg = str(exc)
+        logger.exception("score-plan failed")
         if "credit balance is too low" in msg or "billing" in msg.lower():
             raise HTTPException(status_code=402, detail="Anthropic API account has no credits.")
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=msg)
 
 
 @app.post("/api/feedback")

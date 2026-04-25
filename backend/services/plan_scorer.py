@@ -95,9 +95,10 @@ def _precheck(plan: dict) -> dict:
 
     # ── Safety coverage ──────────────────────────────────────────────────────
     safety_notes = plan.get("safety_notes") or []
-    ghs_present = [bool(re.search(r'GHS\d{2}', note)) for note in safety_notes]
-    ppe_present = [bool(re.search(r'glove|goggle|PPE|fume\s*hood|respirator|lab\s*coat', note, re.IGNORECASE))
-                  for note in safety_notes]
+    safety_strs = [str(n) for n in safety_notes]
+    ghs_present = [bool(re.search(r'GHS\d{2}', n)) for n in safety_strs]
+    ppe_present = [bool(re.search(r'glove|goggle|PPE|fume\s*hood|respirator|lab\s*coat', n, re.IGNORECASE))
+                  for n in safety_strs]
     checks["safety_notes_count"] = len(safety_notes)
     checks["safety_ghs_count"] = sum(ghs_present)
     checks["safety_ppe_count"] = sum(ppe_present)

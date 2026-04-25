@@ -125,9 +125,7 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
           )}
 
           {/* Readiness Score */}
-          {(scoreLoading || score) && (
-            <ReadinessScore score={score} loading={scoreLoading} />
-          )}
+          <ReadinessScore score={score} loading={scoreLoading} />
 
           {/* Safety notes */}
           {plan.safety_notes && plan.safety_notes.length > 0 && (
