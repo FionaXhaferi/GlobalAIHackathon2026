@@ -17,7 +17,7 @@
     .explainer { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 12px; color: #0369a1; line-height: 1.5; }
 
     /* Stats row */
-    .stats { display: flex; gap: 10px; margin-bottom: 20px; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
     .stat { flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; text-align: center; }
     .stat-value { font-size: 15px; font-weight: 700; color: #1e3a5f; }
     .stat-label { font-size: 10px; color: #94a3b8; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -58,6 +58,8 @@
       const budgetStr = p.budget ? `$${Number(p.budget).toLocaleString()}` : '—'
       const durationStr = p.duration || '—'
 
+      const stepStr = p.steps ? `${p.steps} steps` : '—'
+
       card.innerHTML = `
         <div class="header">
           <div class="icon">🛡️</div>
@@ -78,6 +80,18 @@
           <div class="title-text">${p.title || 'Untitled'}</div>
         </div>
 
+        ${p.summary ? `
+        <div class="section">
+          <div class="label">Summary</div>
+          <div class="value" style="font-size:13px;line-height:1.5;">${p.summary}</div>
+        </div>` : ''}
+
+        ${p.endpoint ? `
+        <div class="section">
+          <div class="label">Primary Endpoint</div>
+          <div class="value">${p.endpoint}</div>
+        </div>` : ''}
+
         <div class="stats">
           <div class="stat">
             <div class="stat-value">${budgetStr}</div>
@@ -86,6 +100,10 @@
           <div class="stat">
             <div class="stat-value">${durationStr}</div>
             <div class="stat-label">Duration</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${stepStr}</div>
+            <div class="stat-label">Steps</div>
           </div>
           <div class="stat">
             <div class="stat-value">${(p.cats || []).length}</div>

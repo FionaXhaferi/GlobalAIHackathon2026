@@ -78,10 +78,13 @@ function toBase64Unicode(str: string): string {
   return btoa(unescape(encodeURIComponent(str)))
 }
 
-function qrPayload(p: PassportData, baseUrl: string): string {
+function qrPayload(p: PassportData, plan: ExperimentPlan, baseUrl: string): string {
   const compact = {
     id: p.passport_id,
     title: p.plan_title.slice(0, 60),
+    summary: (plan.summary ?? '').slice(0, 120),
+    endpoint: (plan.validation?.primary_endpoints?.[0] ?? '').slice(0, 80),
+    steps: plan.protocol?.steps?.length ?? 0,
     proto: p.protocol_hash,
     seed: p.random_seed,
     cats: p.reagents.slice(0, 5).map((r) => r.catalog_number).filter(Boolean),
@@ -118,7 +121,7 @@ export default function ReproducibilityPassport({ plan, defaultExpanded = false 
 
   if (!passport) return null
 
-  const payload = qrPayload(passport, passportBaseUrl)
+  const payload = qrPayload(passport, plan, passportBaseUrl)
 
   const handleCopy = () => {
     navigator.clipboard.writeText(JSON.stringify(passport, null, 2))
