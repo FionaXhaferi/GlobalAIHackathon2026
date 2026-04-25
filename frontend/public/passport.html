@@ -35,7 +35,7 @@
       try {
         const hash = window.location.hash.slice(1)
         if (!hash) return null
-        return JSON.parse(decodeURIComponent(hash))
+        return JSON.parse(decodeURIComponent(escape(atob(hash))))
       } catch {
         return null
       }
@@ -43,24 +43,15 @@
 
     function render(p) {
       const card = document.getElementById('passport-card')
-      const reagentRows = (p.reagents || []).map(r =>
-        `<div class="reagent">
-          <span class="reagent-name">${r.name || ''}</span>
-          <span class="reagent-cat">${r.catalog_number || ''} · ${r.supplier || ''}</span>
-        </div>`
-      ).join('')
-
-      const softwareTags = (p.software || []).map(s => `<span class="tag">${s}</span>`).join('')
-      const equipmentList = (p.equipment || []).map(e =>
-        `<div class="reagent"><span class="reagent-name">${e.name}</span><span class="reagent-cat">${e.catalog_number || ''}</span></div>`
-      ).join('')
+      const catalogTags = (p.cats || []).map(c => `<span class="tag">${c}</span>`).join('')
+      const softwareTags = (p.sw || []).map(s => `<span class="tag">${s}</span>`).join('')
 
       card.innerHTML = `
         <div class="header">
           <div class="icon">🛡️</div>
           <div>
             <h1>Reproducibility Passport</h1>
-            <div class="id">ID: ${p.passport_id}</div>
+            <div class="id">ID: ${p.id || ''}</div>
           </div>
         </div>
 
@@ -68,32 +59,26 @@
 
         <div class="section">
           <div class="label">Experiment</div>
-          <div class="title-text">${p.plan_title || 'Untitled'}</div>
+          <div class="title-text">${p.title || 'Untitled'}</div>
         </div>
 
         <div class="section">
           <div class="label">Protocol Hash</div>
-          <div class="value mono">${p.protocol_hash}</div>
+          <div class="value mono">${p.proto || ''}</div>
         </div>
 
         <div class="section">
           <div class="label">Analysis Random Seed</div>
-          <div class="value mono">${p.random_seed}</div>
+          <div class="value mono">${p.seed || ''}</div>
         </div>
 
-        ${p.reagents && p.reagents.length ? `
+        ${catalogTags ? `
         <div class="section">
-          <div class="label">Reagents (${p.reagents.length})</div>
-          ${reagentRows}
+          <div class="label">Key Reagent Catalog Numbers</div>
+          <div>${catalogTags}</div>
         </div>` : ''}
 
-        ${p.equipment && p.equipment.length ? `
-        <div class="section">
-          <div class="label">Equipment</div>
-          ${equipmentList}
-        </div>` : ''}
-
-        ${p.software && p.software.length ? `
+        ${softwareTags ? `
         <div class="section">
           <div class="label">Software</div>
           <div>${softwareTags}</div>
@@ -101,7 +86,7 @@
 
         <div class="section">
           <div class="label">Generated</div>
-          <div class="value">${new Date(p.generated_at).toLocaleString()}</div>
+          <div class="value">${p.ts ? new Date(p.ts).toLocaleString() : ''}</div>
         </div>
 
         <div style="margin-top:20px; padding-top:16px; border-top:1px solid #f1f5f9; font-size:11px; color:#94a3b8; text-align:center;">

@@ -68,10 +68,23 @@ async function buildPassport(plan: ExperimentPlan): Promise<PassportData> {
   return { passport_id, generated_at, plan_title: plan.title, protocol_hash, reagents, equipment, software, random_seed }
 }
 
+function toBase64Unicode(str: string): string {
+  // unicode-safe base64: handles °C, µL, etc.
+  return btoa(unescape(encodeURIComponent(str)))
+}
+
 function qrPayload(p: PassportData, baseUrl: string): string {
-  // encodeURIComponent handles unicode (°C, µL, etc.) that btoa can't encode
-  const data = encodeURIComponent(JSON.stringify(p))
-  return `${baseUrl}#${data}`
+  // Only encode the essential fields — full passport is too long for a QR code
+  const compact = {
+    id: p.passport_id,
+    title: p.plan_title.slice(0, 60),
+    proto: p.protocol_hash,
+    seed: p.random_seed,
+    cats: p.reagents.slice(0, 5).map((r) => r.catalog_number).filter(Boolean),
+    sw: p.software.slice(0, 3),
+    ts: p.generated_at,
+  }
+  return `${baseUrl}#${toBase64Unicode(JSON.stringify(compact))}`
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
