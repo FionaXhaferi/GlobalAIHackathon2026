@@ -65,7 +65,7 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
 
   return (
     <div className="space-y-6 animate-slide-up">
-      {/* Plan header card */}
+      {/* Plan header — full width */}
       <div className="card bg-gradient-to-br from-navy-700 to-navy-800 text-white border-0">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">
@@ -103,123 +103,133 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
         </div>
       </div>
 
-      {/* Feedback applied banner */}
-      {feedbackUsed && feedbackUsed.count > 0 && (
-        <div className="rounded-xl bg-violet-50 border border-violet-200 px-4 py-3 flex items-start gap-3 animate-fade-in">
-          <Brain className="w-4 h-4 text-violet-600 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-violet-800">
-              This plan incorporated {feedbackUsed.count} expert correction{feedbackUsed.count > 1 ? 's' : ''} from similar experiments
-            </p>
-            <p className="text-xs text-violet-600 mt-0.5">
-              Sections improved: {feedbackUsed.corrections.map(c => c.section).join(', ')}
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Main content + sticky passport sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
 
-      {/* Readiness Score + Reproducibility Passport side by side */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-        {(scoreLoading || score) && <ReadinessScore score={score} loading={scoreLoading} />}
-        <ReproducibilityPassport plan={plan} defaultExpanded />
+        {/* ── Left: main content column ── */}
+        <div className="space-y-6 min-w-0">
+
+          {/* Feedback applied banner */}
+          {feedbackUsed && feedbackUsed.count > 0 && (
+            <div className="rounded-xl bg-violet-50 border border-violet-200 px-4 py-3 flex items-start gap-3 animate-fade-in">
+              <Brain className="w-4 h-4 text-violet-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-violet-800">
+                  This plan incorporated {feedbackUsed.count} expert correction{feedbackUsed.count > 1 ? 's' : ''} from similar experiments
+                </p>
+                <p className="text-xs text-violet-600 mt-0.5">
+                  Sections improved: {feedbackUsed.corrections.map(c => c.section).join(', ')}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Readiness Score */}
+          {(scoreLoading || score) && (
+            <ReadinessScore score={score} loading={scoreLoading} />
+          )}
+
+          {/* Safety notes */}
+          {plan.safety_notes && plan.safety_notes.length > 0 && (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <ShieldAlert className="w-4 h-4 text-amber-600" />
+                <span className="text-sm font-bold text-amber-800">Safety Notes</span>
+              </div>
+              <ul className="space-y-1">
+                {plan.safety_notes.map((note, i) => (
+                  <li key={i} className="text-sm text-amber-700 flex items-start gap-2">
+                    <span className="text-amber-400 mt-0.5">•</span>
+                    {note}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Tabs */}
+          <div className="card !p-0 overflow-hidden">
+            <div className="flex border-b border-slate-100 overflow-x-auto">
+              {TABS.map(({ id, label, icon: Icon }) => {
+                const reviewed = reviewSaved.has(id)
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setActiveTab(id)}
+                    className={`flex items-center gap-2 px-5 py-4 text-sm font-semibold whitespace-nowrap
+                               transition-all border-b-2 flex-shrink-0 ${
+                      activeTab === id
+                        ? 'border-navy-700 text-navy-700 bg-navy-50/50'
+                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {label}
+                    {reviewed && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs text-slate-400 italic flex items-center gap-1">
+                  <Brain className="w-3 h-3" />
+                  Expert corrections train future plans
+                </p>
+                <button
+                  onClick={() => setReviewSection(activeTab)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+                              transition-all border ${
+                    reviewSaved.has(activeTab)
+                      ? 'bg-violet-50 border-violet-200 text-violet-700'
+                      : 'bg-violet-600 border-violet-600 text-white hover:bg-violet-700'
+                  }`}
+                >
+                  <MessageSquarePlus className="w-3.5 h-3.5" />
+                  {reviewSaved.has(activeTab) ? '✓ Correction saved' : 'Correct this section'}
+                </button>
+              </div>
+
+              {activeTab === 'protocol'   && <ProtocolSection   protocol={plan.protocol} />}
+              {activeTab === 'materials'  && <MaterialsTable    materials={plan.materials ?? []} />}
+              {activeTab === 'budget'     && <BudgetSection     budget={plan.budget} />}
+              {activeTab === 'timeline'   && <TimelineView      timeline={plan.timeline} />}
+              {activeTab === 'validation' && <ValidationSection validation={plan.validation} />}
+            </div>
+          </div>
+
+          {/* Protocol references */}
+          {plan.protocol_references && plan.protocol_references.length > 0 && (
+            <div className="card">
+              <div className="section-title">
+                <BookMarked className="w-4 h-4" />
+                Grounding References
+              </div>
+              <ul className="space-y-1">
+                {plan.protocol_references.map((ref, i) => (
+                  <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
+                    <span className="text-slate-400 mt-0.5">[{i + 1}]</span>
+                    {ref.startsWith('http') ? (
+                      <a href={ref} target="_blank" rel="noopener noreferrer"
+                         className="text-navy-600 hover:underline break-all">
+                        {ref}
+                      </a>
+                    ) : (
+                      <span>{ref}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* ── Right: sticky passport sidebar ── */}
+        <div className="lg:sticky lg:top-6">
+          <ReproducibilityPassport plan={plan} defaultExpanded />
+        </div>
       </div>
-
-      {/* Safety notes */}
-      {plan.safety_notes && plan.safety_notes.length > 0 && (
-        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <ShieldAlert className="w-4 h-4 text-amber-600" />
-            <span className="text-sm font-bold text-amber-800">Safety Notes</span>
-          </div>
-          <ul className="space-y-1">
-            {plan.safety_notes.map((note, i) => (
-              <li key={i} className="text-sm text-amber-700 flex items-start gap-2">
-                <span className="text-amber-400 mt-0.5">•</span>
-                {note}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div className="card !p-0 overflow-hidden">
-        {/* Tab bar */}
-        <div className="flex border-b border-slate-100 overflow-x-auto">
-          {TABS.map(({ id, label, icon: Icon }) => {
-            const reviewed = reviewSaved.has(id)
-            return (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id)}
-                className={`flex items-center gap-2 px-5 py-4 text-sm font-semibold whitespace-nowrap
-                           transition-all border-b-2 flex-shrink-0 ${
-                  activeTab === id
-                    ? 'border-navy-700 text-navy-700 bg-navy-50/50'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-                {reviewed && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Tab content */}
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-xs text-slate-400 italic flex items-center gap-1">
-              <Brain className="w-3 h-3" />
-              Expert corrections train future plans
-            </p>
-            <button
-              onClick={() => setReviewSection(activeTab)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
-                          transition-all border ${
-                reviewSaved.has(activeTab)
-                  ? 'bg-violet-50 border-violet-200 text-violet-700'
-                  : 'bg-violet-600 border-violet-600 text-white hover:bg-violet-700'
-              }`}
-            >
-              <MessageSquarePlus className="w-3.5 h-3.5" />
-              {reviewSaved.has(activeTab) ? '✓ Correction saved' : 'Correct this section'}
-            </button>
-          </div>
-
-          {activeTab === 'protocol'   && <ProtocolSection   protocol={plan.protocol} />}
-          {activeTab === 'materials'  && <MaterialsTable    materials={plan.materials ?? []} />}
-          {activeTab === 'budget'     && <BudgetSection     budget={plan.budget} />}
-          {activeTab === 'timeline'   && <TimelineView      timeline={plan.timeline} />}
-          {activeTab === 'validation' && <ValidationSection validation={plan.validation} />}
-        </div>
-      </div>
-
-      {/* Protocol references */}
-      {plan.protocol_references && plan.protocol_references.length > 0 && (
-        <div className="card">
-          <div className="section-title">
-            <BookMarked className="w-4 h-4" />
-            Grounding References
-          </div>
-          <ul className="space-y-1">
-            {plan.protocol_references.map((ref, i) => (
-              <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
-                <span className="text-slate-400 mt-0.5">[{i + 1}]</span>
-                {ref.startsWith('http') ? (
-                  <a href={ref} target="_blank" rel="noopener noreferrer"
-                     className="text-navy-600 hover:underline break-all">
-                    {ref}
-                  </a>
-                ) : (
-                  <span>{ref}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       {/* Scientist Review Modal */}
       {reviewSection && (
