@@ -77,16 +77,23 @@ function qrPayload(p: PassportData, baseUrl: string): string {
 
 export default function ReproducibilityPassport({ plan }: Props) {
   const [passport, setPassport] = useState<PassportData | null>(null)
-  const [passportBaseUrl, setPassportBaseUrl] = useState(`http://${window.location.hostname}:8000/passport`)
+  const apiUrl = import.meta.env.VITE_API_URL ?? ''
+  const defaultPassportBase = apiUrl
+    ? `${apiUrl}/passport`
+    : `http://${window.location.hostname}:8000/passport`
+  const [passportBaseUrl, setPassportBaseUrl] = useState(defaultPassportBase)
   const [expanded, setExpanded] = useState(false)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     buildPassport(plan).then(setPassport)
-    fetch((import.meta.env.VITE_API_URL ?? '') + '/api/network-info')
-      .then((r) => r.json())
-      .then((d) => { if (d.passport_base_url) setPassportBaseUrl(d.passport_base_url) })
-      .catch(() => {/* keep default */})
+    // Only fetch network-info in local dev (no VITE_API_URL set)
+    if (!apiUrl) {
+      fetch('/api/network-info')
+        .then((r) => r.json())
+        .then((d) => { if (d.passport_base_url) setPassportBaseUrl(d.passport_base_url) })
+        .catch(() => {/* keep default */})
+    }
   }, [plan])
 
   if (!passport) return null
