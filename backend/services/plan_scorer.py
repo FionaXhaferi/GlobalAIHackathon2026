@@ -242,22 +242,47 @@ Return ONLY valid JSON (no preamble, no fences):
 
 def _extract_json(text: str) -> dict:
     text = text.strip()
+
+    # 1. Direct parse
     try:
         return json.loads(text)
     except Exception:
         pass
-    match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
-    if match:
-        try:
-            return json.loads(match.group(1))
-        except Exception:
-            pass
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if match:
-        try:
-            return json.loads(match.group(0))
-        except Exception:
-            pass
+
+    # 2. Strip markdown fences then try again
+    stripped = re.sub(r'^```(?:json)?\s*|\s*```$', '', text, flags=re.MULTILINE).strip()
+    try:
+        return json.loads(stripped)
+    except Exception:
+        pass
+
+    # 3. Balanced-brace scan — finds the outermost complete JSON object
+    #    correctly handling nested objects and strings (unlike greedy regex)
+    start = text.find('{')
+    if start >= 0:
+        depth = 0
+        in_string = False
+        escape_next = False
+        for i, ch in enumerate(text[start:], start):
+            if escape_next:
+                escape_next = False
+                continue
+            if ch == '\\' and in_string:
+                escape_next = True
+                continue
+            if ch == '"':
+                in_string = not in_string
+            if not in_string:
+                if ch == '{':
+                    depth += 1
+                elif ch == '}':
+                    depth -= 1
+                    if depth == 0:
+                        try:
+                            return json.loads(text[start:i + 1])
+                        except Exception:
+                            break  # found balanced braces but invalid JSON — fall through
+
     raise ValueError("Could not parse scoring response as JSON")
 
 
