@@ -118,10 +118,11 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
         </div>
       )}
 
-      {/* Readiness Score */}
-      {(scoreLoading || score) && (
-        <ReadinessScore score={score} loading={scoreLoading} />
-      )}
+      {/* Readiness Score + Reproducibility Passport side by side */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+        {(scoreLoading || score) && <ReadinessScore score={score} loading={scoreLoading} />}
+        <ReproducibilityPassport plan={plan} defaultExpanded />
+      </div>
 
       {/* Safety notes */}
       {plan.safety_notes && plan.safety_notes.length > 0 && (
@@ -219,9 +220,6 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
           </ul>
         </div>
       )}
-
-      {/* Reproducibility Passport */}
-      <ReproducibilityPassport plan={plan} />
 
       {/* Scientist Review Modal */}
       {reviewSection && (

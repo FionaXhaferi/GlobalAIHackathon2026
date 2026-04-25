@@ -5,6 +5,7 @@ import type { ExperimentPlan } from '../types'
 
 interface Props {
   plan: ExperimentPlan
+  defaultExpanded?: boolean
 }
 
 interface PassportData {
@@ -94,14 +95,14 @@ function qrPayload(p: PassportData, baseUrl: string): string {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function ReproducibilityPassport({ plan }: Props) {
+export default function ReproducibilityPassport({ plan, defaultExpanded = false }: Props) {
   const [passport, setPassport] = useState<PassportData | null>(null)
   const apiUrl = import.meta.env.VITE_API_URL ?? ''
   const defaultPassportBase = apiUrl
     ? `${apiUrl}/passport`
     : `http://${window.location.hostname}:8000/passport`
   const [passportBaseUrl, setPassportBaseUrl] = useState(defaultPassportBase)
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(defaultExpanded)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
@@ -148,14 +149,14 @@ export default function ReproducibilityPassport({ plan }: Props) {
       </button>
 
       {expanded && (
-        <div className="mt-5 pt-5 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-6 animate-fade-in">
-          {/* QR code */}
+        <div className="mt-5 pt-5 border-t border-slate-100 animate-fade-in space-y-5">
+          {/* QR code — centred, prominent */}
           <div className="flex flex-col items-center gap-3">
-            <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <QRCodeSVG value={payload} size={160} level="M" />
+            <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm inline-block">
+              <QRCodeSVG value={payload} size={148} level="M" />
             </div>
-            <p className="text-xs text-slate-400 text-center max-w-[180px]">
-              Scan to load exact reagents, protocol hash &amp; software versions
+            <p className="text-xs text-slate-400 text-center max-w-[200px] leading-relaxed">
+              Scan to load exact reagents, protocol hash &amp; seed on any device
             </p>
             <button
               onClick={handleCopy}
@@ -167,48 +168,45 @@ export default function ReproducibilityPassport({ plan }: Props) {
             </button>
           </div>
 
-          {/* Passport details */}
-          <div className="space-y-4 text-xs">
+          {/* Key fields in a tight grid */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
             <PassportField label="Protocol Hash" value={passport.protocol_hash} mono />
-            <PassportField label="Passport ID" value={passport.passport_id} mono />
-            <PassportField label="Random Seed" value={passport.random_seed} mono />
-            <PassportField label="Generated" value={new Date(passport.generated_at).toLocaleString()} />
-
-            {passport.reagents.length > 0 && (
-              <div>
-                <p className="font-semibold text-slate-600 mb-1">Reagents ({passport.reagents.length})</p>
-                <ul className="space-y-0.5">
-                  {passport.reagents.slice(0, 6).map((r, i) => (
-                    <li key={i} className="text-slate-500 flex gap-1 flex-wrap">
-                      <span className="font-medium text-slate-700 truncate max-w-[120px]">{r.name}</span>
-                      {r.catalog_number && <span className="font-mono text-slate-400">· {r.catalog_number}</span>}
-                    </li>
-                  ))}
-                  {passport.reagents.length > 6 && (
-                    <li className="text-slate-400">+{passport.reagents.length - 6} more</li>
-                  )}
-                </ul>
-              </div>
-            )}
-
-            {passport.equipment.length > 0 && (
-              <div>
-                <p className="font-semibold text-slate-600 mb-1">Equipment</p>
-                <ul className="space-y-0.5">
-                  {passport.equipment.map((e, i) => (
-                    <li key={i} className="text-slate-500 truncate">{e.name}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {passport.software.length > 0 && (
-              <div>
-                <p className="font-semibold text-slate-600 mb-1">Software</p>
-                <p className="text-slate-500">{passport.software.join(', ')}</p>
-              </div>
-            )}
+            <PassportField label="Random Seed"   value={passport.random_seed}   mono />
+            <PassportField label="Passport ID"   value={passport.passport_id}   mono />
+            <PassportField label="Generated"     value={new Date(passport.generated_at).toLocaleString()} />
           </div>
+
+          {/* Reagents, equipment, software — compact chips */}
+          {passport.reagents.length > 0 && (
+            <div className="text-xs">
+              <p className="font-semibold text-slate-500 uppercase tracking-wide text-[10px] mb-1.5">
+                Reagents ({passport.reagents.length})
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {passport.reagents.slice(0, 6).map((r, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-medium truncate max-w-[160px]">
+                    {r.name}{r.catalog_number ? ` · ${r.catalog_number}` : ''}
+                  </span>
+                ))}
+                {passport.reagents.length > 6 && (
+                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-400">
+                    +{passport.reagents.length - 6} more
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {passport.software.length > 0 && (
+            <div className="text-xs">
+              <p className="font-semibold text-slate-500 uppercase tracking-wide text-[10px] mb-1.5">Software</p>
+              <div className="flex flex-wrap gap-1">
+                {passport.software.map((s, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-mono">{s}</span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
