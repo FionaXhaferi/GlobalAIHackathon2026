@@ -82,8 +82,8 @@ function qrPayload(p: PassportData, plan: ExperimentPlan, baseUrl: string): stri
   const compact = {
     id: p.passport_id,
     title: p.plan_title.slice(0, 60),
-    summary: (plan.summary ?? '').slice(0, 120),
-    endpoint: (plan.validation?.primary_endpoints?.[0] ?? '').slice(0, 80),
+    summary: (plan.summary ?? '').slice(0, 80),
+    endpoint: (plan.validation?.primary_endpoints?.[0] ?? '').slice(0, 50),
     steps: plan.protocol?.steps?.length ?? 0,
     proto: p.protocol_hash,
     seed: p.random_seed,
@@ -156,7 +156,7 @@ export default function ReproducibilityPassport({ plan, defaultExpanded = false 
           {/* QR code — centred, prominent */}
           <div className="flex flex-col items-center gap-3">
             <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm inline-block">
-              <QRCodeSVG value={payload} size={148} level="M" />
+              <QRCodeSVG value={payload} size={180} level="L" />
             </div>
             <p className="text-xs text-slate-400 text-center max-w-[200px] leading-relaxed">
               Scan to load exact reagents, protocol hash &amp; seed on any device
