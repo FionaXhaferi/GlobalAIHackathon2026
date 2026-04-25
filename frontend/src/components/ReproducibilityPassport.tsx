@@ -16,6 +16,8 @@ interface PassportData {
   equipment: { name: string; catalog_number: string; supplier: string }[]
   software: string[]
   random_seed: string
+  budget_usd: number | null
+  total_duration: string | null
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -65,16 +67,17 @@ async function buildPassport(plan: ExperimentPlan): Promise<PassportData> {
   const canonical = JSON.stringify({ plan_title: plan.title, protocol_hash, reagents, equipment, software, generated_at })
   const passport_id = (await sha256(canonical)).slice(0, 12).toUpperCase()
 
-  return { passport_id, generated_at, plan_title: plan.title, protocol_hash, reagents, equipment, software, random_seed }
+  const budget_usd = (plan.budget?.total_usd) ?? null
+  const total_duration = plan.timeline?.total_duration ?? null
+
+  return { passport_id, generated_at, plan_title: plan.title, protocol_hash, reagents, equipment, software, random_seed, budget_usd, total_duration }
 }
 
 function toBase64Unicode(str: string): string {
-  // unicode-safe base64: handles °C, µL, etc.
   return btoa(unescape(encodeURIComponent(str)))
 }
 
 function qrPayload(p: PassportData, baseUrl: string): string {
-  // Only encode the essential fields — full passport is too long for a QR code
   const compact = {
     id: p.passport_id,
     title: p.plan_title.slice(0, 60),
@@ -82,6 +85,8 @@ function qrPayload(p: PassportData, baseUrl: string): string {
     seed: p.random_seed,
     cats: p.reagents.slice(0, 5).map((r) => r.catalog_number).filter(Boolean),
     sw: p.software.slice(0, 3),
+    budget: p.budget_usd,
+    duration: p.total_duration,
     ts: p.generated_at,
   }
   return `${baseUrl}#${toBase64Unicode(JSON.stringify(compact))}`
