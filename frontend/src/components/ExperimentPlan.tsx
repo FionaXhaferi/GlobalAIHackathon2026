@@ -104,10 +104,10 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
       </div>
 
       {/* Main content + sticky passport sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-6 items-start">
 
         {/* ── Left: main content column ── */}
-        <div className="space-y-6 min-w-0">
+        <div className="space-y-6 min-w-0 w-full">
 
           {/* Feedback applied banner */}
           {feedbackUsed && feedbackUsed.count > 0 && (
@@ -226,7 +226,7 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
         </div>
 
         {/* ── Right: sticky passport sidebar ── */}
-        <div className="lg:sticky lg:top-6">
+        <div className="md:sticky md:top-6">
           <ReproducibilityPassport plan={plan} defaultExpanded />
         </div>
       </div>

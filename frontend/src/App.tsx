@@ -76,7 +76,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col">
       <Header onReset={stage !== 'input' ? handleReset : undefined} />
 
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8 space-y-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 space-y-8">
 
         {/* Step indicator */}
         {stage !== 'input' && (
