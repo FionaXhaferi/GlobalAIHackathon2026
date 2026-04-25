@@ -69,7 +69,8 @@ async function buildPassport(plan: ExperimentPlan): Promise<PassportData> {
 }
 
 function qrPayload(p: PassportData, baseUrl: string): string {
-  const data = btoa(JSON.stringify(p))
+  // encodeURIComponent handles unicode (°C, µL, etc.) that btoa can't encode
+  const data = encodeURIComponent(JSON.stringify(p))
   return `${baseUrl}#${data}`
 }
 
