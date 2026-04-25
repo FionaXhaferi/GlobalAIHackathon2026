@@ -137,7 +137,8 @@ def _format_precheck(checks: dict) -> str:
 
     # Budget
     lines.append(f"\nBUDGET REALISM:")
-    lines.append(f"  Total: ${checks['budget_total_usd']:,} | Line items: {checks['budget_line_items_count']}")
+    total = checks['budget_total_usd'] or 0
+    lines.append(f"  Total: ${int(total):,} | Line items: {checks['budget_line_items_count']}")
     lines.append(f"  Labor line: {'✓ present' if checks['labor_line_present'] else '✗ MISSING'}")
 
     # Statistical power

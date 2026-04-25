@@ -76,10 +76,18 @@ async def network_info():
     return {"ip": ip, "passport_base_url": f"http://{ip}:8000/passport"}
 
 
-PASSPORT_HTML = open(
-    os.path.join(os.path.dirname(__file__), "..", "frontend", "public", "passport.html"),
-    encoding="utf-8",
-).read()
+def _load_passport_html() -> str:
+    # Local dev: passport.html is in frontend/public relative to backend/
+    local_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "public", "passport.html")
+    if os.path.exists(local_path):
+        return open(local_path, encoding="utf-8").read()
+    # Render/production: embed inline (file not present in deployed backend dir)
+    return open(os.path.join(os.path.dirname(__file__), "passport.html"), encoding="utf-8").read()
+
+try:
+    PASSPORT_HTML = _load_passport_html()
+except FileNotFoundError:
+    PASSPORT_HTML = "<h1>Passport viewer not available</h1>"
 
 
 @app.get("/passport", response_class=HTMLResponse)
