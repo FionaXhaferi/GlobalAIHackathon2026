@@ -83,7 +83,7 @@ export default function ReproducibilityPassport({ plan }: Props) {
 
   useEffect(() => {
     buildPassport(plan).then(setPassport)
-    fetch('/api/network-info')
+    fetch((import.meta.env.VITE_API_URL ?? '') + '/api/network-info')
       .then((r) => r.json())
       .then((d) => { if (d.passport_base_url) setPassportBaseUrl(d.passport_base_url) })
       .catch(() => {/* keep default */})

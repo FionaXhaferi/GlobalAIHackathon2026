@@ -1,6 +1,6 @@
 import type { LiteratureResult, ExperimentPlan, FeedbackPayload, ReadinessScore } from './types';
 
-const BASE = '/api';
+const BASE = (import.meta.env.VITE_API_URL ?? '') + '/api';
 
 export async function checkLiterature(question: string): Promise<LiteratureResult> {
   const res = await fetch(`${BASE}/literature-qc`, {

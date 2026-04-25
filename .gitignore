@@ -1,7 +1,10 @@
 # Environment / secrets — NEVER commit these
 backend/.env
-*.env
-.env.*
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Python
 __pycache__/
@@ -31,6 +34,9 @@ frontend/.vite/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Claude Code settings
+.claude/
 
 # IDE
 .vscode/
