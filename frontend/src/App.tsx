@@ -78,12 +78,12 @@ export default function App() {
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 space-y-8">
 
-        {/* Step indicator */}
+        
         {stage !== 'input' && (
           <StepIndicator stage={stage} />
         )}
 
-        {/* Hero / Question Input */}
+        
         {stage === 'input' && (
           <div className="animate-slide-up">
             <HeroSection />
@@ -91,7 +91,7 @@ export default function App() {
           </div>
         )}
 
-        {/* Error banner */}
+        
         {error && (
           <div className="animate-fade-in rounded-xl bg-red-50 border border-red-200 p-4 flex items-start gap-3">
             <span className="text-red-500 text-xl">⚠</span>
@@ -102,19 +102,20 @@ export default function App() {
           </div>
         )}
 
-        {/* Literature QC loading */}
+        
         {stage === 'lit-loading' && (
           <LoadingState
-            title="Checking the literature…"
+            title="Checking if the hypothesis exists or not…"
+            stillWorkingMessage="Checking if the hypothesis exists or not…"
             steps={[
-              'Searching Semantic Scholar',
+              'Searching literature',
               'Analysing related papers',
               'Classifying novelty signal',
             ]}
           />
         )}
 
-        {/* Literature QC result */}
+        
         {(stage === 'lit-done' || stage === 'plan-loading' || stage === 'plan-done') && litResult && (
           <LiteratureQC
             result={litResult}
@@ -123,10 +124,10 @@ export default function App() {
           />
         )}
 
-        {/* Plan loading — streaming */}
+        
         {stage === 'plan-loading' && (
           <LoadingState
-            title="Generating your experiment plan…"
+            title="Structuring the experiment plan"
             subtitle="Designing your full protocol, materials list, budget, and timeline."
             steps={[
               'Designing step-by-step protocol',
@@ -140,7 +141,7 @@ export default function App() {
           />
         )}
 
-        {/* Full plan */}
+        
         {stage === 'plan-done' && plan && (
           <div className="animate-fade-in">
             <ExperimentPlan

@@ -126,6 +126,19 @@ export interface FeedbackPayload {
   annotations: string;
 }
 
+export interface Critique {
+  section: string;
+  severity: 'high' | 'medium' | 'low';
+  issue: string;
+  suggestion: string;
+}
+
+export interface DevilsAdvocateResult {
+  critiques: Critique[];
+  verdict: string;
+  parse_error?: boolean;
+}
+
 export type AppStage =
   | 'input'
   | 'lit-loading'

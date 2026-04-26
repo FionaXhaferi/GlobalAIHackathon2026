@@ -17,13 +17,13 @@ export default function BudgetSection({ budget }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Total + visual breakdown */}
+      
       <div className="rounded-xl bg-navy-700 text-white p-5">
         <p className="text-white/70 text-sm font-medium">Total Estimated Budget</p>
         <p className="text-4xl font-extrabold mt-1">${total.toLocaleString()}</p>
         <p className="text-white/50 text-xs mt-1">{budget.currency || 'USD'}</p>
 
-        {/* Stacked bar */}
+        
         {categories.length > 0 && (
           <div className="mt-4">
             <div className="flex rounded-lg overflow-hidden h-4">
@@ -42,7 +42,7 @@ export default function BudgetSection({ budget }: Props) {
           </div>
         )}
 
-        {/* Legend */}
+        
         <div className="mt-3 flex flex-wrap gap-3">
           {categories.map(([cat, val], i) => {
             const pct = total > 0 ? ((Number(val) / total) * 100).toFixed(1) : '0'
@@ -58,7 +58,7 @@ export default function BudgetSection({ budget }: Props) {
         </div>
       </div>
 
-      {/* Category summary cards */}
+      
       {categories.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {categories.map(([cat, val], i) => {
@@ -75,7 +75,7 @@ export default function BudgetSection({ budget }: Props) {
         </div>
       )}
 
-      {/* Line items table */}
+      
       {budget.line_items && budget.line_items.length > 0 && (
         <div>
           <h3 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">Line Items</h3>

@@ -71,7 +71,7 @@ export default function MaterialsTable({ materials }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Filter */}
+      
       <div className="flex items-center gap-3">
         <input
           type="text"
@@ -84,7 +84,7 @@ export default function MaterialsTable({ materials }: Props) {
         <span className="text-xs text-slate-500">{filtered.length} items</span>
       </div>
 
-      {/* Table */}
+      
       <div className="overflow-x-auto rounded-xl border border-slate-200">
         <table className="w-full text-sm">
           <thead>

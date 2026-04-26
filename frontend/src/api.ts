@@ -1,4 +1,4 @@
-import type { LiteratureResult, ExperimentPlan, FeedbackPayload, ReadinessScore } from './types';
+import type { LiteratureResult, ExperimentPlan, FeedbackPayload, ReadinessScore, DevilsAdvocateResult } from './types';
 
 const BASE = (import.meta.env.VITE_API_URL ?? '') + '/api';
 
@@ -64,7 +64,6 @@ export async function streamPlan(
         else if (event.type === 'error') onError(event.message ?? 'Unknown error');
         else if (event.type === 'feedback_used') onFeedbackUsed?.(event as FeedbackUsedEvent);
       } catch {
-        // partial line — wait for next chunk
       }
     }
   }
@@ -83,6 +82,26 @@ export async function scorePlan(question: string, plan: ExperimentPlan): Promise
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: 'Scoring failed' }))
       throw new Error(err.detail || 'Scoring failed')
+    }
+    return res.json()
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+export async function critiqueplan(question: string, plan: ExperimentPlan): Promise<DevilsAdvocateResult> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 60_000)
+  try {
+    const res = await fetch(`${BASE}/critique-plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, plan }),
+      signal: controller.signal,
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Critique failed' }))
+      throw new Error(err.detail || 'Critique failed')
     }
     return res.json()
   } finally {

@@ -24,7 +24,7 @@ export default function TimelineView({ timeline }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Summary */}
+      
       <div className="flex items-center gap-3">
         <div className="rounded-xl bg-navy-50 border border-navy-100 px-4 py-2">
           <span className="text-xs text-slate-500">Total Duration</span>
@@ -36,10 +36,10 @@ export default function TimelineView({ timeline }: Props) {
         </div>
       </div>
 
-      {/* Gantt chart */}
+      
       <div className="overflow-x-auto">
         <div className="min-w-[600px]">
-          {/* Week header */}
+          
           <div className="flex mb-3">
             <div className="w-48 flex-shrink-0" />
             <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${totalWeeks}, 1fr)` }}>
@@ -51,7 +51,7 @@ export default function TimelineView({ timeline }: Props) {
             </div>
           </div>
 
-          {/* Phase rows */}
+          
           <div className="space-y-2">
             {timeline.phases.map((phase, i) => {
               const start = (phase.start_week || 1) - 1
@@ -61,15 +61,15 @@ export default function TimelineView({ timeline }: Props) {
 
               return (
                 <div key={phase.phase} className="flex items-center gap-0">
-                  {/* Phase label */}
+                  
                   <div className="w-48 flex-shrink-0 pr-3">
                     <p className="text-xs font-semibold text-slate-700 truncate">{phase.name}</p>
                     <p className="text-xs text-slate-400">{phase.duration}</p>
                   </div>
 
-                  {/* Gantt grid */}
+                  
                   <div className="flex-1 relative h-10">
-                    {/* Background grid */}
+                    
                     <div
                       className="absolute inset-0 grid"
                       style={{ gridTemplateColumns: `repeat(${totalWeeks}, 1fr)` }}
@@ -79,7 +79,7 @@ export default function TimelineView({ timeline }: Props) {
                       ))}
                     </div>
 
-                    {/* Phase bar */}
+                    
                     <div
                       className={`absolute top-1 bottom-1 rounded-lg ${colorClass} opacity-90
                                    flex items-center px-2 shadow-sm cursor-pointer
@@ -102,7 +102,7 @@ export default function TimelineView({ timeline }: Props) {
         </div>
       </div>
 
-      {/* Phase detail cards */}
+      
       <div className="space-y-4">
         {timeline.phases.map((phase, i) => {
           const colorClass = PHASE_COLORS[i % PHASE_COLORS.length]
@@ -120,7 +120,7 @@ export default function TimelineView({ timeline }: Props) {
                 </div>
               </div>
               <div className="p-4 grid sm:grid-cols-3 gap-4">
-                {/* Tasks */}
+                
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Tasks</p>
                   <ul className="space-y-1">
@@ -132,7 +132,7 @@ export default function TimelineView({ timeline }: Props) {
                     ))}
                   </ul>
                 </div>
-                {/* Dependencies */}
+                
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Dependencies</p>
                   <ul className="space-y-1">
@@ -143,7 +143,7 @@ export default function TimelineView({ timeline }: Props) {
                     ))}
                   </ul>
                 </div>
-                {/* Deliverables */}
+                
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Deliverables</p>
                   <ul className="space-y-1">

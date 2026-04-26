@@ -65,9 +65,9 @@ export default function ScientistReview({ section, content, question, experiment
          onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Panel */}
+      
       <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl animate-slide-up overflow-hidden">
-        {/* Header */}
+        
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-navy-100 flex items-center justify-center">
@@ -84,7 +84,7 @@ export default function ScientistReview({ section, content, question, experiment
         </div>
 
         <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
-          {/* Star rating */}
+          
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
               How accurate is this section? <span className="text-red-400">*</span>
@@ -113,7 +113,7 @@ export default function ScientistReview({ section, content, question, experiment
             </div>
           </div>
 
-          {/* Editable content */}
+          
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
               Edit / Correct this section
@@ -129,7 +129,7 @@ export default function ScientistReview({ section, content, question, experiment
             />
           </div>
 
-          {/* Annotations */}
+          
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
               Annotations / Notes
@@ -152,7 +152,7 @@ export default function ScientistReview({ section, content, question, experiment
           )}
         </div>
 
-        {/* Footer */}
+        
         <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3">
           <p className="text-xs text-slate-500">
             {hasChanges ? '⚡ Your corrections will improve future plans for similar experiments.' : 'No changes yet — even a rating without edits is valuable.'}

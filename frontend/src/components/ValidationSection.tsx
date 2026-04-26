@@ -32,7 +32,7 @@ export default function ValidationSection({ validation }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Endpoints row */}
+      
       <div className="grid sm:grid-cols-2 gap-4">
         {validation.primary_endpoints?.length > 0 && (
           <div className="rounded-xl bg-navy-50 border border-navy-100 p-4">
@@ -66,7 +66,7 @@ export default function ValidationSection({ validation }: Props) {
         )}
       </div>
 
-      {/* Success / Failure row */}
+      
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4">
           <div className="flex items-center gap-2 mb-2">
@@ -96,7 +96,7 @@ export default function ValidationSection({ validation }: Props) {
         </div>
       </div>
 
-      {/* Stats · Controls · Replicates — three equal columns */}
+      
       <div className="grid sm:grid-cols-3 gap-4">
         {validation.statistical_approach && (
           <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">

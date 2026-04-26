@@ -8,15 +8,15 @@ interface Props {
   steps?: string[]
   streamingText?: string
   feedbackUsed?: FeedbackUsedEvent | null
+  stillWorkingMessage?: string
 }
 
-export default function LoadingState({ title, subtitle, steps = [], streamingText, feedbackUsed }: Props) {
+export default function LoadingState({ title, subtitle, steps = [], streamingText, feedbackUsed, stillWorkingMessage }: Props) {
   const [activeStep, setActiveStep] = useState(0)
   const [elapsed, setElapsed] = useState(0)
   const startRef = useRef(Date.now())
   const allDone = activeStep >= steps.length - 1 && steps.length > 0
 
-  // Advance steps on a timer
   useEffect(() => {
     if (!steps.length) return
     const interval = setInterval(() => {
@@ -25,7 +25,6 @@ export default function LoadingState({ title, subtitle, steps = [], streamingTex
     return () => clearInterval(interval)
   }, [steps.length])
 
-  // Elapsed time counter
   useEffect(() => {
     const t = setInterval(() => {
       setElapsed(Math.floor((Date.now() - startRef.current) / 1000))
@@ -35,7 +34,7 @@ export default function LoadingState({ title, subtitle, steps = [], streamingTex
 
   return (
     <div className="card animate-fade-in">
-      {/* Spinner + title */}
+      
       <div className="flex items-center gap-4 mb-6">
         <div className="w-12 h-12 rounded-xl bg-navy-50 flex items-center justify-center flex-shrink-0">
           <Loader2 className="w-6 h-6 text-navy-700 animate-spin" />
@@ -49,7 +48,7 @@ export default function LoadingState({ title, subtitle, steps = [], streamingTex
         </div>
       </div>
 
-      {/* Feedback used banner */}
+      
       {feedbackUsed && feedbackUsed.count > 0 && (
         <div className="mb-5 rounded-xl bg-violet-50 border border-violet-200 px-4 py-3 flex items-start gap-3 animate-fade-in">
           <Brain className="w-4 h-4 text-violet-600 mt-0.5 flex-shrink-0" />
@@ -71,7 +70,7 @@ export default function LoadingState({ title, subtitle, steps = [], streamingTex
         </div>
       )}
 
-      {/* Progress steps */}
+      
       {steps.length > 0 && (
         <div className="space-y-2.5 mb-6">
           {steps.map((step, i) => {
@@ -98,21 +97,21 @@ export default function LoadingState({ title, subtitle, steps = [], streamingTex
             )
           })}
 
-          {/* "Still working" message once all steps are marked done */}
+          
           {allDone && (
             <div className="flex items-center gap-3 animate-fade-in">
               <div className="w-5 h-5 rounded-full bg-navy-100 flex items-center justify-center flex-shrink-0">
                 <Loader2 className="w-3 h-3 text-navy-500 animate-spin" />
               </div>
               <span className="text-sm text-slate-500 italic">
-                Still generating — complex plans take 30–60 s…
+                {stillWorkingMessage ?? 'Generating plan, please wait :)'}
               </span>
             </div>
           )}
         </div>
       )}
 
-      {/* Streaming preview */}
+      
       {streamingText && (
         <div className="rounded-xl bg-slate-900 p-4 max-h-48 overflow-y-auto">
           <p className="text-xs font-mono text-emerald-400 leading-relaxed whitespace-pre-wrap">
@@ -122,7 +121,7 @@ export default function LoadingState({ title, subtitle, steps = [], streamingTex
         </div>
       )}
 
-      {/* Animated progress bar (shown when no stream preview) */}
+      
       {!streamingText && (
         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-navy-500 to-science-teal rounded-full"

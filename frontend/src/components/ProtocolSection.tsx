@@ -22,18 +22,18 @@ export default function ProtocolSection({ protocol }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Overview */}
+      
       {protocol.overview && (
         <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
           <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{protocol.overview}</p>
         </div>
       )}
 
-      {/* Steps */}
+      
       <div className="space-y-4">
         {(protocol.steps ?? []).map((step) => (
           <div key={step.step} className="flex gap-4 group">
-            {/* Step number */}
+            
             <div className="flex-shrink-0 pt-1">
               <div className="w-8 h-8 rounded-full bg-navy-700 text-white text-xs font-bold
                               flex items-center justify-center group-hover:bg-navy-800 transition-colors">
@@ -41,7 +41,7 @@ export default function ProtocolSection({ protocol }: Props) {
               </div>
             </div>
 
-            {/* Content */}
+            
             <div className="flex-1 pb-4 border-b border-slate-100 last:border-0">
               <div className="flex items-start justify-between gap-3 mb-1">
                 <h3 className="font-semibold text-slate-800 text-sm">{step.title}</h3>

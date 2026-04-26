@@ -1,11 +1,17 @@
 import aiosqlite
 import json
+import os
+import re
 import uuid
 from datetime import datetime
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent.parent / "feedback.db"
+import anthropic
+from dotenv import load_dotenv
 
+load_dotenv()
+
+DB_PATH = Path(__file__).parent.parent / "feedback.db"
 
 async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
@@ -23,7 +29,6 @@ async def init_db():
             )
         """)
         await db.commit()
-
 
 async def save_feedback(
     question: str,
@@ -58,22 +63,28 @@ async def save_feedback(
         await db.commit()
     return feedback_id
 
-
-def _jaccard(q1: str, q2: str) -> float:
-    stopwords = {
-        "the", "and", "for", "will", "that", "with", "this", "from", "into",
-        "than", "compared", "at", "by", "in", "of", "to", "a", "an", "is",
-        "are", "was", "were", "be", "been", "being", "have", "has", "had",
-        "do", "does", "did", "not", "but", "or", "nor", "so", "yet",
-    }
-    def kw(text: str) -> set:
-        return {w.strip(".,;:?!()[]") for w in text.lower().split()
-                if w not in stopwords and len(w) > 3}
-    k1, k2 = kw(q1), kw(q2)
-    if not k1 or not k2:
-        return 0.0
-    return len(k1 & k2) / len(k1 | k2)
-
+async def _claude_relevance_scores(question: str, candidates: list[str]) -> dict[str, float]:
+    numbered = "\n".join(f"{i + 1}. {q}" for i, q in enumerate(candidates))
+    prompt = (
+        f'New experiment hypothesis:\n"{question}"\n\n'
+        f"Prior experiment questions:\n{numbered}\n\n"
+        "Score how relevant each prior experiment's expert feedback would be to the new experiment (0.0–1.0):\n"
+        "- 1.0 = same domain, methodology, and subject — feedback directly applies\n"
+        "- 0.5 = related domain or overlapping method — feedback may partially apply\n"
+        "- 0.0 = completely different domain or method — feedback is irrelevant\n\n"
+        'Respond with ONLY a JSON object mapping number to score, e.g. {"1": 0.8, "2": 0.1}'
+    )
+    client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    response = await client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=256,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    raw = response.content[0].text.strip()
+    raw = re.sub(r"^```(?:json)?\s*", "", raw)
+    raw = re.sub(r"\s*```$", "", raw)
+    scores_by_index = json.loads(raw)
+    return {candidates[int(k) - 1]: float(v) for k, v in scores_by_index.items()}
 
 async def get_similar_feedback(question: str, limit: int = 3) -> list[dict]:
     async with aiosqlite.connect(DB_PATH) as db:
@@ -83,24 +94,34 @@ async def get_similar_feedback(question: str, limit: int = 3) -> list[dict]:
         ) as cursor:
             rows = await cursor.fetchall()
 
-    scored = []
-    for row in rows:
-        score = _jaccard(question, row["question"])
-        if score > 0.05:
-            scored.append((score, dict(row)))
+    if not rows:
+        return []
 
+    rows = [dict(r) for r in rows]
+    candidates = [r["question"] for r in rows]
+
+    try:
+        scores = await _claude_relevance_scores(question, candidates)
+    except Exception:
+        return []
+
+    scored = [
+        (scores.get(r["question"], 0.0), r)
+        for r in rows
+        if scores.get(r["question"], 0.0) >= 0.6
+    ]
     scored.sort(key=lambda x: x[0], reverse=True)
-    results = []
-    for _, row in scored[:limit]:
-        results.append({
-            "section": row["section"],
-            "original_content": row["original_content"],
-            "corrected_content": row["corrected_content"],
-            "rating": row["rating"],
-            "annotations": row["annotations"],
-        })
-    return results
 
+    return [
+        {
+            "section": r["section"],
+            "original_content": r["original_content"],
+            "corrected_content": r["corrected_content"],
+            "rating": r["rating"],
+            "annotations": r["annotations"],
+        }
+        for _, r in scored[:limit]
+    ]
 
 async def get_all_feedback(limit: int = 20) -> list[dict]:
     async with aiosqlite.connect(DB_PATH) as db:

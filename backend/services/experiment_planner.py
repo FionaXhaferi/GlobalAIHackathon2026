@@ -2,6 +2,7 @@ import json
 import os
 import re
 from typing import AsyncGenerator
+import urllib.request
 import anthropic
 from dotenv import load_dotenv
 
@@ -56,7 +57,6 @@ STRICT LENGTH LIMITS — these are hard caps, not suggestions:
 
 CRITICAL: Respond with ONLY a valid JSON object. No preamble, no explanation, no markdown code fences. Start your response with { and end with }."""
 
-
 def _build_feedback_context(feedback: list[dict]) -> str:
     if not feedback:
         return ""
@@ -71,7 +71,6 @@ def _build_feedback_context(feedback: list[dict]) -> str:
         )
     return "\n".join(lines)
 
-
 def _build_literature_context(lit: dict) -> str:
     if not lit:
         return ""
@@ -82,7 +81,6 @@ def _build_literature_context(lit: dict) -> str:
     for r in refs[:3]:
         lines.append(f"- Relevant prior work: {r.get('title', '')} ({r.get('year', '')})")
     return "\n".join(lines)
-
 
 JSON_SCHEMA = """{
   "title": "concise experiment title",
@@ -162,7 +160,6 @@ JSON_SCHEMA = """{
   "protocol_references": ["protocols.io URL or DOI of grounding protocol"]
 }"""
 
-
 async def generate_plan_stream(
     question: str,
     literature_context: dict,
@@ -183,7 +180,6 @@ async def generate_plan_stream(
 Return a JSON object matching EXACTLY this structure (fill in all fields with real, accurate, specific values):
 {JSON_SCHEMA}"""
 
-    # Tell the frontend which corrections are being applied
     if feedback:
         yield {
             "type": "feedback_used",
@@ -233,8 +229,23 @@ Return a JSON object matching EXACTLY this structure (fill in all fields with re
     plan = _parse_plan(full_text)
     if "error" in plan:
         print(f"[planner] JSON parse failed. Last 300 chars of response:\n{full_text[-300:]}")
+    else:
+        plan["protocol_references"] = _validate_urls(plan.get("protocol_references") or [])
     yield {"type": "done", "plan": plan}
 
+def _validate_urls(urls: list[str]) -> list[str]:
+    valid = []
+    for url in urls:
+        if not url.startswith("http"):
+            continue
+        try:
+            req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                if resp.status < 400:
+                    valid.append(url)
+        except Exception:
+            pass
+    return valid
 
 def _parse_plan(text: str) -> dict:
     text = text.strip()

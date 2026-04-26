@@ -21,8 +21,6 @@ interface PassportData {
   total_duration: string | null
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
 async function sha256(text: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
   return Array.from(new Uint8Array(buf))
@@ -62,7 +60,6 @@ async function buildPassport(plan: ExperimentPlan): Promise<PassportData> {
   const software = extractSoftware(plan)
   const generated_at = new Date().toISOString()
 
-  // Deterministic seed from protocol hash (reproducible random seed for analysis)
   const random_seed = parseInt(protocol_hash.slice(0, 8), 16).toString()
 
   const canonical = JSON.stringify({ plan_title: plan.title, protocol_hash, reagents, equipment, software, generated_at })
@@ -96,8 +93,6 @@ function qrPayload(p: PassportData, plan: ExperimentPlan, baseUrl: string): stri
   return `${baseUrl}#${toBase64Unicode(JSON.stringify(compact))}`
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
 export default function ReproducibilityPassport({ plan, defaultExpanded = false }: Props) {
   const [passport, setPassport] = useState<PassportData | null>(null)
   const apiUrl = import.meta.env.VITE_API_URL ?? ''
@@ -110,12 +105,11 @@ export default function ReproducibilityPassport({ plan, defaultExpanded = false 
 
   useEffect(() => {
     buildPassport(plan).then(setPassport)
-    // Only fetch network-info in local dev (no VITE_API_URL set)
     if (!apiUrl) {
       fetch('/api/network-info')
         .then((r) => r.json())
         .then((d) => { if (d.passport_base_url) setPassportBaseUrl(d.passport_base_url) })
-        .catch(() => {/* keep default */})
+        .catch(() => {})
     }
   }, [plan])
 
@@ -131,7 +125,7 @@ export default function ReproducibilityPassport({ plan, defaultExpanded = false 
 
   return (
     <div className="card border border-slate-200">
-      {/* Header */}
+      
       <button
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center justify-between gap-3 text-left"
@@ -153,7 +147,7 @@ export default function ReproducibilityPassport({ plan, defaultExpanded = false 
 
       {expanded && (
         <div className="mt-5 pt-5 border-t border-slate-100 animate-fade-in space-y-5">
-          {/* QR code — centred, prominent */}
+          
           <div className="flex flex-col items-center gap-3">
             <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm inline-block">
               <QRCodeSVG value={payload} size={180} level="L" />
@@ -171,7 +165,7 @@ export default function ReproducibilityPassport({ plan, defaultExpanded = false 
             </button>
           </div>
 
-          {/* Key fields in a tight grid */}
+          
           <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
             <PassportField label="Protocol Hash" value={passport.protocol_hash} mono />
             <PassportField label="Random Seed"   value={passport.random_seed}   mono />
@@ -179,7 +173,7 @@ export default function ReproducibilityPassport({ plan, defaultExpanded = false 
             <PassportField label="Generated"     value={new Date(passport.generated_at).toLocaleString()} />
           </div>
 
-          {/* Reagents, equipment, software — compact chips */}
+          
           {passport.reagents.length > 0 && (
             <div className="text-xs">
               <p className="font-semibold text-slate-500 uppercase tracking-wide text-[10px] mb-1.5">

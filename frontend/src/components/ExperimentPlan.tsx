@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import {
   FlaskConical, List, Package, DollarSign, Calendar, CheckSquare,
-  ShieldAlert, BookMarked, Download, Brain, MessageSquarePlus
+  ShieldAlert, BookMarked, Download, Brain, MessageSquarePlus, Grid3x3
 } from 'lucide-react'
-import type { ExperimentPlan as PlanType, ReadinessScore as ScoreType } from '../types'
-import { scorePlan } from '../api'
+import type { ExperimentPlan as PlanType, ReadinessScore as ScoreType, DevilsAdvocateResult } from '../types'
+import { scorePlan, critiqueplan } from '../api'
 import type { FeedbackUsedEvent } from '../api'
 import ProtocolSection from './ProtocolSection'
 import MaterialsTable from './MaterialsTable'
@@ -14,6 +14,8 @@ import ValidationSection from './ValidationSection'
 import ScientistReview from './ScientistReview'
 import ReadinessScore from './ReadinessScore'
 import ReproducibilityPassport from './ReproducibilityPassport'
+import DevilsAdvocate from './DevilsAdvocate'
+import PlateDesigner from './PlateDesigner'
 
 interface Props {
   plan: PlanType
@@ -36,9 +38,13 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
   const [activeTab, setActiveTab] = useState<TabId>('protocol')
   const [reviewSection, setReviewSection] = useState<string | null>(null)
   const [reviewSaved, setReviewSaved] = useState<Set<string>>(new Set())
+  const [showPlate, setShowPlate] = useState(false)
   const [score, setScore] = useState<ScoreType | null>(null)
   const [scoreLoading, setScoreLoading] = useState(true)
   const [scoreError, setScoreError] = useState<string | null>(null)
+  const [critique, setCritique] = useState<DevilsAdvocateResult | null>(null)
+  const [critiqueLoading, setCritiqueLoading] = useState(true)
+  const [critiqueError, setCritiqueError] = useState<string | null>(null)
 
   useEffect(() => {
     setScoreLoading(true)
@@ -47,6 +53,13 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
       .then(setScore)
       .catch((e: Error) => setScoreError(e.name === 'AbortError' ? 'Timed out' : e.message))
       .finally(() => setScoreLoading(false))
+
+    setCritiqueLoading(true)
+    setCritiqueError(null)
+    critiqueplan(question, plan)
+      .then(setCritique)
+      .catch((e: Error) => setCritiqueError(e.name === 'AbortError' ? 'Timed out' : e.message))
+      .finally(() => setCritiqueLoading(false))
   }, [plan, question])
 
   const handleReviewSaved = (section: string) => {
@@ -67,7 +80,7 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
 
   return (
     <div className="space-y-6 animate-slide-up">
-      {/* Plan header — full width */}
+      
       <div className="card bg-gradient-to-br from-navy-700 to-navy-800 text-white border-0">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">
@@ -86,17 +99,27 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
               <p className="text-white/70 text-sm mt-2 leading-relaxed max-w-2xl">{plan.summary}</p>
             </div>
           </div>
-          <button
-            onClick={() => handleExportPDF(plan)}
-            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/10
-                       hover:bg-white/20 text-white text-xs font-medium transition-all"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Export
-          </button>
+          <div className="flex gap-2 flex-shrink-0">
+            <button
+              onClick={() => setShowPlate(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/10
+                         hover:bg-white/20 text-white text-xs font-medium transition-all"
+            >
+              <Grid3x3 className="w-3.5 h-3.5" />
+              Plate Designer
+            </button>
+            <button
+              onClick={() => handleExportPDF(plan)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/10
+                         hover:bg-white/20 text-white text-xs font-medium transition-all"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export
+            </button>
+          </div>
         </div>
 
-        {/* Quick stats */}
+        
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
           <StatCard label="Total Budget" value={`$${(plan.budget?.total_usd ?? 0).toLocaleString()}`} />
           <StatCard label="Duration" value={plan.timeline?.total_duration ?? 'N/A'} />
@@ -105,13 +128,13 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
         </div>
       </div>
 
-      {/* Main content + sticky passport sidebar */}
+      
       <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-6 items-start">
 
-        {/* ── Left: main content column ── */}
+        
         <div className="space-y-6 min-w-0 w-full">
 
-          {/* Feedback applied banner */}
+          
           {feedbackUsed && feedbackUsed.count > 0 && (
             <div className="rounded-xl bg-violet-50 border border-violet-200 px-4 py-3 flex items-start gap-3 animate-fade-in">
               <Brain className="w-4 h-4 text-violet-600 mt-0.5 flex-shrink-0" />
@@ -126,10 +149,13 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
             </div>
           )}
 
-          {/* Readiness Score */}
+          
           <ReadinessScore score={score} loading={scoreLoading} error={scoreError} />
 
-          {/* Safety notes */}
+          
+          <DevilsAdvocate result={critique} loading={critiqueLoading} error={critiqueError} />
+
+          
           {plan.safety_notes && plan.safety_notes.length > 0 && (
             <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -147,7 +173,7 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
             </div>
           )}
 
-          {/* Tabs */}
+          
           <div className="card !p-0 overflow-hidden">
             <div className="flex border-b border-slate-100 overflow-x-auto">
               {TABS.map(({ id, label, icon: Icon }) => {
@@ -199,7 +225,7 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
             </div>
           </div>
 
-          {/* Protocol references */}
+          
           {plan.protocol_references && plan.protocol_references.length > 0 && (
             <div className="card">
               <div className="section-title">
@@ -225,13 +251,18 @@ export default function ExperimentPlan({ plan, question, experimentTags, feedbac
           )}
         </div>
 
-        {/* ── Right: sticky passport sidebar ── */}
+        
         <div className="md:sticky md:top-6">
           <ReproducibilityPassport plan={plan} defaultExpanded />
         </div>
       </div>
 
-      {/* Scientist Review Modal */}
+      
+      {showPlate && (
+        <PlateDesigner plan={plan} onClose={() => setShowPlate(false)} />
+      )}
+
+      
       {reviewSection && (
         <ScientistReview
           section={reviewSection}

@@ -9,8 +9,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ── Tavily search ─────────────────────────────────────────────────────────────
-
 async def _search_tavily(query: str) -> list[dict]:
     """
     Search via Tavily API — covers protocols.io, Bio-Protocol, Nature Protocols,
@@ -87,7 +85,6 @@ async def _search_tavily(query: str) -> list[dict]:
     except Exception:
         pass
 
-    # Deduplicate by URL
     seen = set()
     deduped = []
     for r in results:
@@ -95,8 +92,6 @@ async def _search_tavily(query: str) -> list[dict]:
             seen.add(r["url"])
             deduped.append(r)
     return deduped
-
-# ── Search query extraction ───────────────────────────────────────────────────
 
 def _make_search_query(hypothesis: str) -> str:
     """
@@ -110,7 +105,6 @@ def _make_search_query(hypothesis: str) -> str:
     """
     text = hypothesis.strip()
 
-    # Split before "will <action-verb>" — the subject contains the key entities
     split = re.split(
         r'\s+will\s+(?:increase|decrease|reduce|improve|enhance|inhibit|detect|show|'
         r'demonstrate|produce|generate|convert|prevent|promote|activate|suppress|'
@@ -119,23 +113,18 @@ def _make_search_query(hypothesis: str) -> str:
     )
     query = split[0].strip()
 
-    # Append key terms from the predicate (assay names, model organisms, specific proteins)
     if len(split) > 1:
         predicate = split[1]
-        # Pull out capitalised terms and hyphenated compound words (likely proper nouns / assay names)
         extra = re.findall(r'\b[A-Z][a-zA-Z0-9-]{3,}\b', predicate)
         if extra:
             query += " " + " ".join(extra[:6])
 
-    # Strip pure quantitative claims that pollute search ("at least 30%", "below 0.5 mg/L")
     query = re.sub(r'\bat\s+least\s+[\d.]+\s*[\w%/]+', '', query, flags=re.IGNORECASE)
     query = re.sub(r'\bbelow\s+[\d.]+\s*[\w%/]+', '', query, flags=re.IGNORECASE)
     query = re.sub(r'\bwithin\s+\d+\s+\w+', '', query, flags=re.IGNORECASE)
 
     query = " ".join(query.split())  # collapse whitespace
-    # Fall back to first 150 chars if extraction was too aggressive
     return query[:200] if len(query) >= 20 else hypothesis[:150]
-
 
 SEMANTIC_SCHOLAR_URL = "https://api.semanticscholar.org/graph/v1/paper/search"
 SS_FIELDS = "title,authors,year,abstract,url,externalIds"
@@ -144,9 +133,6 @@ PUBMED_SEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 PUBMED_SUMMARY_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
 
 ARXIV_URL = "https://export.arxiv.org/api/query"
-
-
-# ── Source: Semantic Scholar ─────────────────────────────────────────────────
 
 async def _search_semantic_scholar(query: str, client: httpx.AsyncClient, limit: int = 6) -> list[dict]:
     try:
@@ -173,9 +159,6 @@ async def _search_semantic_scholar(query: str, client: httpx.AsyncClient, limit:
         return results
     except Exception:
         return []
-
-
-# ── Source: PubMed (NCBI E-utilities) ────────────────────────────────────────
 
 async def _search_pubmed(query: str, client: httpx.AsyncClient, limit: int = 6) -> list[dict]:
     try:
@@ -217,9 +200,6 @@ async def _search_pubmed(query: str, client: httpx.AsyncClient, limit: int = 6) 
         return results
     except Exception:
         return []
-
-
-# ── Source: arXiv ─────────────────────────────────────────────────────────────
 
 async def _search_arxiv(query: str, client: httpx.AsyncClient, limit: int = 4) -> list[dict]:
     try:
@@ -263,9 +243,6 @@ async def _search_arxiv(query: str, client: httpx.AsyncClient, limit: int = 4) -
     except Exception:
         return []
 
-
-# ── Merge and format ──────────────────────────────────────────────────────────
-
 def _format_results(all_papers: list[dict]) -> str:
     if not all_papers:
         return "No papers found across any searched database."
@@ -282,9 +259,6 @@ def _format_results(all_papers: list[dict]) -> str:
             f"{abstract_str}"
         )
     return "\n\n".join(lines)
-
-
-# ── JSON extraction ───────────────────────────────────────────────────────────
 
 def _extract_json(text: str) -> dict:
     text = text.strip()
@@ -306,9 +280,6 @@ def _extract_json(text: str) -> dict:
             pass
     raise ValueError("Could not extract JSON from literature QC response")
 
-
-# ── Main entry point ──────────────────────────────────────────────────────────
-
 async def check_literature(question: str) -> dict:
     search_query = _make_search_query(question)
     async with httpx.AsyncClient(timeout=15.0) as client:
@@ -319,14 +290,26 @@ async def check_literature(question: str) -> dict:
             _search_tavily(search_query),
         )
 
-    all_papers = ss_results + pubmed_results + arxiv_results + tavily_results
+    seen_urls: set[str] = set()
+    deduped: dict[str, list[dict]] = {"ss": [], "pubmed": [], "arxiv": [], "tavily": []}
+    for key, results in [("ss", ss_results), ("pubmed", pubmed_results),
+                         ("arxiv", arxiv_results), ("tavily", tavily_results)]:
+        for r in results:
+            url = r.get("url", "")
+            if url and url in seen_urls:
+                continue
+            if url:
+                seen_urls.add(url)
+            deduped[key].append(r)
+
+    all_papers = deduped["ss"] + deduped["pubmed"] + deduped["arxiv"] + deduped["tavily"]
     formatted = _format_results(all_papers)
 
     sources_used = []
-    if ss_results:      sources_used.append(f"Semantic Scholar ({len(ss_results)} results)")
-    if pubmed_results:  sources_used.append(f"PubMed ({len(pubmed_results)} results)")
-    if arxiv_results:   sources_used.append(f"arXiv ({len(arxiv_results)} results)")
-    if tavily_results:  sources_used.append(f"Tavily Web ({len(tavily_results)} results)")
+    if deduped["ss"]:     sources_used.append(f"Semantic Scholar ({len(deduped['ss'])} results)")
+    if deduped["pubmed"]: sources_used.append(f"PubMed ({len(deduped['pubmed'])} results)")
+    if deduped["arxiv"]:  sources_used.append(f"arXiv ({len(deduped['arxiv'])} results)")
+    if deduped["tavily"]: sources_used.append(f"Tavily Web ({len(deduped['tavily'])} results)")
     sources_str = ", ".join(sources_used) if sources_used else "no databases returned results"
 
     anthropic_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))

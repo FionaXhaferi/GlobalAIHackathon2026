@@ -19,9 +19,6 @@ SCORER_SYSTEM = """You are a rigorous scientific quality auditor. You evaluate A
 
 You will receive BOTH a programmatic pre-check report (objective, always correct) AND the full plan. The pre-check results are ground truth — do not contradict them. Use the plan text to judge qualitative aspects (cost realism, citation quality, vagueness) that code cannot check."""
 
-
-# ── Programmatic pre-checks ───────────────────────────────────────────────────
-
 def _precheck(plan: dict) -> dict:
     """
     Objective, code-level checks that don't depend on Claude's judgment.
@@ -29,7 +26,6 @@ def _precheck(plan: dict) -> dict:
     """
     checks = {}
 
-    # ── Protocol completeness ────────────────────────────────────────────────
     steps = (plan.get("protocol") or {}).get("steps") or []
     step_issues = []
     for s in steps:
@@ -45,10 +41,8 @@ def _precheck(plan: dict) -> dict:
     checks["protocol_steps_total"] = len(steps)
     checks["protocol_steps_complete"] = len(steps) - len(step_issues)
 
-    # ── Reagent availability ─────────────────────────────────────────────────
     materials = plan.get("materials") or []
     missing_catalog = [m.get("name", "?") for m in materials if not m.get("catalog_number")]
-    # Detect obviously fake catalog numbers (too short, all zeros, placeholder text)
     fake_catalog = []
     for m in materials:
         cat = str(m.get("catalog_number") or "")
@@ -58,7 +52,6 @@ def _precheck(plan: dict) -> dict:
     checks["fake_catalog"] = fake_catalog
     checks["materials_total"] = len(materials)
 
-    # ── Budget realism ───────────────────────────────────────────────────────
     line_items = (plan.get("budget") or {}).get("line_items") or []
     categories = (plan.get("budget") or {}).get("categories") or {}
     labor_present = any(
@@ -70,7 +63,6 @@ def _precheck(plan: dict) -> dict:
     checks["budget_total_usd"] = (plan.get("budget") or {}).get("total_usd", 0)
     checks["budget_line_items_count"] = len(line_items)
 
-    # ── Statistical power ────────────────────────────────────────────────────
     validation = plan.get("validation") or {}
     replicates_str = str(validation.get("replicates") or "")
     stat_approach = str(validation.get("statistical_approach") or "")
@@ -93,7 +85,6 @@ def _precheck(plan: dict) -> dict:
     )
     checks["bio_tech_distinction"] = bio_tech
 
-    # ── Safety coverage ──────────────────────────────────────────────────────
     safety_notes = plan.get("safety_notes") or []
     safety_strs = [str(n) for n in safety_notes]
     ghs_present = [bool(re.search(r'GHS\d{2}', n)) for n in safety_strs]
@@ -103,7 +94,6 @@ def _precheck(plan: dict) -> dict:
     checks["safety_ghs_count"] = sum(ghs_present)
     checks["safety_ppe_count"] = sum(ppe_present)
 
-    # ── Citation density ─────────────────────────────────────────────────────
     refs = plan.get("protocol_references") or []
     real_urls = [r for r in refs if re.search(r'https?://', str(r))]
     doi_refs = [r for r in refs if re.search(r'doi\.org|10\.\d{4}', str(r))]
@@ -113,11 +103,9 @@ def _precheck(plan: dict) -> dict:
 
     return checks
 
-
 def _format_precheck(checks: dict) -> str:
     lines = ["=== PROGRAMMATIC PRE-CHECK RESULTS (objective, ground truth) ===\n"]
 
-    # Protocol
     lines.append(f"PROTOCOL COMPLETENESS:")
     lines.append(f"  Steps: {checks['protocol_steps_complete']}/{checks['protocol_steps_total']} fully specified")
     if checks["protocol_step_issues"]:
@@ -126,7 +114,6 @@ def _format_precheck(checks: dict) -> str:
     else:
         lines.append("  ✓ All steps have temperature, time, and concentration/volume")
 
-    # Reagents
     lines.append(f"\nREAGENT AVAILABILITY:")
     lines.append(f"  Materials: {checks['materials_total']} total")
     if checks["missing_catalog"]:
@@ -136,26 +123,22 @@ def _format_precheck(checks: dict) -> str:
     if checks["fake_catalog"]:
         lines.append(f"  ✗ Suspicious/placeholder catalog numbers: {', '.join(checks['fake_catalog'])}")
 
-    # Budget
     lines.append(f"\nBUDGET REALISM:")
     total = checks['budget_total_usd'] or 0
     lines.append(f"  Total: ${int(total):,} | Line items: {checks['budget_line_items_count']}")
     lines.append(f"  Labor line: {'✓ present' if checks['labor_line_present'] else '✗ MISSING'}")
 
-    # Statistical power
     lines.append(f"\nSTATISTICAL POWER:")
     lines.append(f"  n= stated: {'✓ n=' + str(checks['replicates_n_value']) if checks['replicates_n_stated'] else '✗ MISSING'}")
     lines.append(f"  Named test: {'✓ ' + str(checks['stat_test_found']) if checks['named_statistical_test'] else '✗ MISSING'}")
     lines.append(f"  Power calculation: {'✓ present' if checks['power_calculation_present'] else '✗ MISSING'}")
     lines.append(f"  Bio/tech distinction: {'✓ present' if checks['bio_tech_distinction'] else '✗ MISSING'}")
 
-    # Safety
     lines.append(f"\nSAFETY COVERAGE:")
     lines.append(f"  Notes: {checks['safety_notes_count']} total")
     lines.append(f"  GHS codes: {checks['safety_ghs_count']}/{checks['safety_notes_count']}")
     lines.append(f"  PPE mentioned: {checks['safety_ppe_count']}/{checks['safety_notes_count']}")
 
-    # Citations
     lines.append(f"\nCITATION DENSITY:")
     lines.append(f"  References: {checks['protocol_references_total']} total, "
                  f"{checks['protocol_references_real_urls']} real URLs, "
@@ -163,14 +146,9 @@ def _format_precheck(checks: dict) -> str:
 
     return "\n".join(lines)
 
-
-# ── Scoring prompt ────────────────────────────────────────────────────────────
-
 def _build_prompt(question: str, plan: dict, precheck: dict) -> str:
     precheck_str = _format_precheck(precheck)
 
-    # Send full plan but extract only the sections relevant to qualitative scoring
-    # (skip large arrays that don't add scoring signal once pre-checked)
     scoring_plan = {
         "title": plan.get("title"),
         "protocol": {
@@ -237,27 +215,20 @@ Return ONLY valid JSON (no preamble, no markdown fences). Keep every feedback/ve
   "top_issues": ["<critical gap 1 max 100 chars>", "<critical gap 2 max 100 chars>"]
 }}"""
 
-
-# ── JSON extraction ───────────────────────────────────────────────────────────
-
 def _extract_json(text: str) -> dict:
     text = text.strip()
 
-    # 1. Direct parse
     try:
         return json.loads(text)
     except Exception:
         pass
 
-    # 2. Strip markdown fences then try again
     stripped = re.sub(r'^```(?:json)?\s*|\s*```$', '', text, flags=re.MULTILINE).strip()
     try:
         return json.loads(stripped)
     except Exception:
         pass
 
-    # 3. Balanced-brace scan — finds the outermost complete JSON object
-    #    correctly handling nested objects and strings (unlike greedy regex)
     start = text.find('{')
     if start >= 0:
         depth = 0
@@ -285,9 +256,6 @@ def _extract_json(text: str) -> dict:
 
     raise ValueError("Could not parse scoring response as JSON")
 
-
-# ── Main entry point ──────────────────────────────────────────────────────────
-
 def score_plan(question: str, plan: dict) -> dict:
     precheck = _precheck(plan)
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
@@ -301,13 +269,13 @@ def score_plan(question: str, plan: dict) -> dict:
     )
 
     raw = message.content[0].text
-    import logging as _log
-    _log.getLogger(__name__).debug("scorer raw response: %s", raw[:500])
-    if message.stop_reason == "max_tokens":
-        _log.getLogger(__name__).warning("scorer hit max_tokens — response truncated, JSON will be invalid")
-    result = _extract_json(raw)
+    print("SCORER RAW:", repr(raw[:600]), flush=True)
+    print("SCORER STOP:", message.stop_reason, flush=True)
+    try:
+        result = _extract_json(raw)
+    except ValueError:
+        raise ValueError(f"JSON parse failed. stop={message.stop_reason} raw={raw[:300]}")
 
-    # Recompute overall from sub-scores — never trust Claude's self-reported overall
     if "sub_scores" in result:
         computed = 0.0
         for key, weight in _WEIGHTS.items():
@@ -315,7 +283,6 @@ def score_plan(question: str, plan: dict) -> dict:
             computed += s * weight
         result["overall"] = round(computed)
 
-    # Attach pre-check for debugging / future use
     result["_precheck"] = precheck
 
     return result

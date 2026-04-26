@@ -38,7 +38,7 @@ export default function LiteratureQC({ result, question: _question, onGeneratePl
 
   return (
     <div className="card animate-slide-up space-y-5">
-      {/* Header */}
+      
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
@@ -59,14 +59,14 @@ export default function LiteratureQC({ result, question: _question, onGeneratePl
         </span>
       </div>
 
-      {/* Summary */}
+      
       <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
         <p className="text-sm text-slate-700 leading-relaxed">{result.summary}</p>
       </div>
 
       <p className="text-xs text-slate-500">{cfg.description}</p>
 
-      {/* References */}
+      
       {result.references && result.references.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
@@ -105,7 +105,7 @@ export default function LiteratureQC({ result, question: _question, onGeneratePl
         </div>
       )}
 
-      {/* CTA */}
+      
       {onGeneratePlan && (
         <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
           <p className="text-sm text-slate-500">
