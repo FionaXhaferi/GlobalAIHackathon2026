@@ -48,7 +48,7 @@ export default function App() {
       (chunk) => setStreamingText((prev) => prev + chunk),
       (p) => {
         if (p && 'error' in p) {
-          setError('Plan generation failed: Claude\'s response could not be parsed as JSON. Please try again — this sometimes happens with very complex hypotheses.')
+          setError('Plan generation failed: the response could not be parsed as JSON. Please try again — this sometimes happens with very complex hypotheses.')
           setStage('lit-done')
           return
         }
